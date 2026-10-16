@@ -1,0 +1,21 @@
+# Dwa testowe serwery SSH do zadania 2.4 (bob@host1, alice@host2)
+services:
+  host1:
+    build: .
+    hostname: host1
+    environment:
+      SSH_USER: bob
+    ports:
+      - "127.0.0.1:2221:22"
+    volumes:
+      - ${HOME}/.ssh/id_ed25519.pub:/tmp/key.pub:ro
+
+  host2:
+    build: .
+    hostname: host2
+    environment:
+      SSH_USER: alice
+    ports:
+      - "127.0.0.1:2222:22"
+    volumes:
+      - ${HOME}/.ssh/id_ed25519.pub:/tmp/key.pub:ro
