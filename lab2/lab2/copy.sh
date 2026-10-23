@@ -21,7 +21,6 @@ for spec in "$@"; do
         continue
     fi
 
-    # -3: przesył idzie przez lokalną maszynę, hosty nie muszą mieć dostępu do siebie nawzajem
     if scp -3 "$src/$file" "$dst/$new"; then
         echo "Skopiowano: $file -> $new"
     else

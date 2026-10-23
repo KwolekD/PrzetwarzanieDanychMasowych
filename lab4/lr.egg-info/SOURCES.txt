@@ -1,0 +1,12 @@
+setup.py
+lr/__init__.py
+lr/base.py
+lr/lr_np.py
+lr/lr_proc.py
+lr/lr_seq.py
+lr/lr_thread.py
+lr.egg-info/PKG-INFO
+lr.egg-info/SOURCES.txt
+lr.egg-info/dependency_links.txt
+lr.egg-info/top_level.txt
+tests/test_lr.py
