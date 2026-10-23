@@ -1,0 +1,46 @@
+services:
+  content:
+    image: nginx:alpine
+    deploy:
+      replicas: 3
+    restart: unless-stopped
+    networks: [web]
+    configs:
+      - source: content_conf
+        target: /etc/nginx/conf.d/default.conf
+
+  load-balancer:
+    image: nginx:alpine
+    ports: ["8080:80"]
+    depends_on: [content]
+    restart: unless-stopped
+    networks: [web]
+    configs:
+      - source: lb_conf
+        target: /etc/nginx/conf.d/default.conf
+
+  checker:
+    image: curlimages/curl
+    depends_on: [load-balancer]
+    restart: unless-stopped
+    networks: [web]
+    entrypoint: ["sh", "-c", "while true; do curl -s http://load-balancer; sleep 5; done"]
+
+networks:
+  web:
+
+configs:
+  content_conf:
+    content: |
+      server {
+        listen 80;
+        default_type text/plain;
+        location / { return 200 "Witaj z kontenera $$hostname\n"; }
+      }
+  lb_conf:
+    content: |
+      upstream backend { zone backend 64k; server content:80; }
+      server {
+        listen 80;
+        location / { proxy_pass http://backend; }
+      }
