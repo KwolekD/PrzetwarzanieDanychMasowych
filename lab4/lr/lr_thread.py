@@ -1,22 +1,21 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 from lr import base
-import threading as th
+
 
 class LinearRegressionThreads(base.LinearRegression):
+    def __init__(self, num_workers: int = 4) -> None:
+        super().__init__()
+        self.num_workers = num_workers
+
     def fit(self, X: List[float], y: List[float]) -> base.LinearRegression:
-        """Fits model to data using threads."""
-        self._initialize_weights()
-        self.batch_size = 16  # Each thread processes one sample
+        """Fits model to data computing partial sums of batches in threads."""
+        X_batches = base.split_batches(X, self.num_workers)
+        y_batches = base.split_batches(y, self.num_workers)
 
-        for _ in range(self.num_epochs):
-            threads = []
-            for i in range(0, len(X), self.batch_size):
-                X_batch = X[i:i + self.batch_size]
-                y_batch = y[i:i + self.batch_size]
-                thread = th.Thread(target=self._update_weights, args=(X_batch, y_batch))
-                threads.append(thread)
-                thread.start()
+        with ThreadPoolExecutor(max_workers=len(X_batches)) as executor:
+            partials = list(executor.map(base.partial_sums, X_batches, y_batches))
 
-            for thread in threads:
-                thread.join()
+        self._coef = base.coef_from_sums(base.aggregate_sums(partials))
+        return self
