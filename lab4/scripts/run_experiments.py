@@ -33,7 +33,7 @@ MARKERS = {
     "LinearRegressionThreads": "D",
 }
 PARALLEL_MODELS = [lr.LinearRegressionThreads, lr.LinearRegressionProcess]
-BLAS_ENV_VARS = ["OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"]
+BLAS_ENV_VARS = ["OPENBLAS_NUM_THREADS"]
 
 
 def get_args() -> argparse.Namespace:
@@ -125,8 +125,12 @@ def run_experiments(
     """Measures fit time of every model on every dataset."""
     results = []
     for dataset in datasets:
+        # NumPy model gets data already as arrays, so list -> array conversion
+        # is done once here and not counted in the measured fit() time
+        dataset_np = tuple(np.asarray(values, dtype=np.float64) for values in dataset)
         for model_cls in models:
-            results.append(measure(model_cls(), dataset, repeats))
+            model_input = dataset_np if model_cls is lr.LinearRegressionNumpy else dataset
+            results.append(measure(model_cls(), model_input, repeats))
     return results
 
 

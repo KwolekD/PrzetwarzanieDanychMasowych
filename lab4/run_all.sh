@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PYTHON_VERSIONS=(3.10 3.12 3.14)
-NUM_SAMPLES=(100 1000 10000 100000 1000000)
+NUM_SAMPLES=(100 1000 10000 100000 1000000 10000000)
 BLAS_THREADS=(1 4)
 NUM_WORKERS=(1 2 4 8)
 REPEATS=5
@@ -15,9 +15,7 @@ IMAGE=lab4-lr
 DATASETS_DIR=datasets
 RESULTS_DIR=data
 
-# Git Bash on Windows: disable path conversion and mount Windows path
-export MSYS_NO_PATHCONV=1
-HOST_DIR="$(pwd -W 2>/dev/null || pwd)"
+HOST_DIR="$(pwd)"
 
 # Usage: docker_run <python-version> <blas-threads> <command...>
 docker_run() {
@@ -27,9 +25,7 @@ docker_run() {
     docker run --rm \
         --user "$(id -u):$(id -g)" \
         -v "${HOST_DIR}:/app" \
-        -e OMP_NUM_THREADS="${blas_threads}" \
         -e OPENBLAS_NUM_THREADS="${blas_threads}" \
-        -e MKL_NUM_THREADS="${blas_threads}" \
         "${IMAGE}:py${version}" "$@"
 }
 
