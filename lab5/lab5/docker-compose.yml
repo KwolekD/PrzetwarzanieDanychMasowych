@@ -1,0 +1,62 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672", "15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      retries: 10
+
+  worker:
+    build: .
+    command: celery -A celery_app worker -Q celery -n worker@lab5 --loglevel=info
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  scraper:
+    build: .
+    command: celery -A celery_app worker -Q scraper -n scraper@%h --loglevel=info
+    deploy:
+      replicas: 3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  poet:
+    build: .
+    command: celery -A celery_app worker -Q poem --concurrency=1 -n poet@lab5 --loglevel=info
+    volumes: ["./output:/data"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  flower:
+    build: .
+    command: celery -A celery_app flower --broker_api=http://guest:guest@rabbitmq:15672/api/
+    ports: ["5555:5555"]
+    depends_on: [worker, scraper, poet]
+
+  zad1:
+    build: .
+    command: python zad1.py
+    depends_on: [worker]
+    profiles: [zad1]
+
+  zad2:
+    build: .
+    command: python zad2.py
+    depends_on: [worker]
+    profiles: [zad2]
+
+  zad3:
+    build: .
+    command: python zad3.py
+    depends_on: [poet]
+    profiles: [zad3]
+
+  zad4:
+    build: .
+    command: python zad4.py
+    depends_on: [worker, scraper, poet]
+    profiles: [zad4]
