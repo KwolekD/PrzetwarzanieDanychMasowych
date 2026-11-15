@@ -1,6 +1,6 @@
 services:
   spark-master:
-    image: "bitnami/spark:latest"
+    image: "bitnamilegacy/spark:3.5.6"
     container_name: "spark-master"
     environment:
       - SPARK_MODE=master
@@ -9,17 +9,21 @@ services:
       - "8080:8080"  # Spark web UI
 
   spark-worker:
-    image: "bitnami/spark:latest"
+    image: "bitnamilegacy/spark:3.5.6"
     deploy:
       replicas: 3
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G 
+      - SPARK_WORKER_MEMORY=2G
       - SPARK_WORKER_CORES=1
+    volumes:
+      # wspolny katalog na dane - executory zapisuja/czytaja pliki lokalnie,
+      # wiec kazdy worker i driver musi widziec ten sam katalog
+      - ./data:/data
 
   spark-app:
-    image: "bitnami/spark:latest"
+    image: "bitnamilegacy/spark:3.5.6"
     container_name: "spark-app"
     depends_on:
       - spark-master
@@ -27,7 +31,16 @@ services:
     environment:
       - SPARK_MASTER_URL=spark://spark-master:7077
       - PYTHONPATH=/opt/bitnami/spark/python/lib/py4j-0.10.9.7-src.zip:/opt/bitnami/spark/python/
+      - DATA_DIR=/data
+      # konfiguracja zadania 6.3
+      - STRINGS_COUNT=1000000
+      - STRING_MIN_LEN=5
+      - STRING_MAX_LEN=50
+      # ile sekund trzymac aplikacje (i Spark UI na :4040) po zakonczeniu pracy
+      - UI_WAIT_SECONDS=${UI_WAIT_SECONDS:-0}
+    ports:
+      - "4040:4040"  # Spark UI aplikacji (driver)
     volumes:
       - ./main.py:/app/main.py
+      - ./data:/data
     command: ["python3", "/app/main.py"]
-
